@@ -2,3 +2,6 @@ data/
 ml/cache/
 web/__pycache__/
 web/cache/
+.DS_Store
+web/.DS_Store
+ml/.DS_Store
