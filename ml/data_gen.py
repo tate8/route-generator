@@ -9,9 +9,6 @@ import requests
 import copy
 
 
-METERS_IN_1_MILE = 1609
-FEET_IN_1_METER = 3.28084
-
 class NetworkDatasetFactory:  
     class BoundingBox(NamedTuple):
         north: float # lat
@@ -104,7 +101,7 @@ class NetworkDatasetFactory:
 
         elevations = []
         for result in response['results']:
-            elevation = result['elevation'] * FEET_IN_1_METER
+            elevation = result['elevation']
             elevations.append(elevation)
 
         for node, elevation in zip(G.nodes, elevations):
@@ -128,12 +125,15 @@ class NetworkDatasetFactory:
 
             G.edges[edge]['surface_type'] = surface_type
             G.edges[edge]['is_not_motor_road'] = int(h == 'path' or h == 'track')
-
-    def adjust_edge_lengths(self, G):
+            
+    def convert_all_grades_to_percent_grades(self, G):
         for edge in G.edges:
             edge_data = G.edges[edge]
-            length = edge_data['length']
-            G.edges[edge]['length'] = length / METERS_IN_1_MILE
+            grade = edge_data['grade']
+            grade_abs = edge_data['grade_abs']
+
+            G.edges[edge]['grade'] = grade * 100
+            G.edges[edge]['grade_abs'] = grade_abs * 100
 
     
     def add_node_attributes(self, G):
@@ -196,9 +196,9 @@ class NetworkDatasetFactory:
         # processing
         self.cleanup_graph(G)
         self.cleanup_merged_edges(G)
-        self.adjust_edge_lengths(G)
         self.add_node_elevations(G)
         ox.add_edge_grades(G)
+        self.convert_all_grades_to_percent_grades(G)
         self.add_edge_surface_types(G)
         self.add_node_attributes(G)
         self.choose_random_start_and_end_nodes(G)
